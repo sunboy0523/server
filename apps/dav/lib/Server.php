@@ -71,6 +71,7 @@ use OCA\DAV\SystemTag\SystemTagPlugin;
 use OCA\DAV\Upload\ChunkingPlugin;
 use OCP\AppFramework\Http\Response;
 use OCP\Diagnostics\IEventLogger;
+use OCA\DAV\Upload\ChunkingV2Plugin;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IRequest;
 use OCP\Profiler\IProfiler;
@@ -214,6 +215,7 @@ class Server {
 
 		$this->server->addPlugin(new CopyEtagHeaderPlugin());
 		$this->server->addPlugin(new RequestIdHeaderPlugin(\OC::$server->get(IRequest::class)));
+		$this->server->addPlugin(new ChunkingV2Plugin());
 		$this->server->addPlugin(new ChunkingPlugin());
 
 		// allow setup of additional plugins
