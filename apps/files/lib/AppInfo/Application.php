@@ -42,6 +42,7 @@ use OCA\Files\Controller\ApiController;
 use OCA\Files\DirectEditingCapabilities;
 use OCA\Files\Event\LoadAdditionalScriptsEvent;
 use OCA\Files\Event\LoadSidebar;
+use OCA\Files\Listener\HiddenFolderListener;
 use OCA\Files\Listener\LegacyLoadAdditionalScriptsAdapter;
 use OCA\Files\Listener\LoadSidebarListener;
 use OCA\Files\Notification\Notifier;
@@ -64,6 +65,7 @@ use OCP\IUserSession;
 use OCP\Share\IManager as IShareManager;
 use OCP\Util;
 use Psr\Container\ContainerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Application extends App implements IBootstrap {
 	public const APP_ID = 'files';
@@ -129,6 +131,7 @@ class Application extends App implements IBootstrap {
 		$this->registerTemplates();
 		$context->injectFn(Closure::fromCallable([$this, 'registerNavigation']));
 		$this->registerHooks();
+		$context->injectFn(Closure::fromCallable([$this, 'registerLegacyEvents']));
 	}
 
 	private function registerCollaboration(IProviderManager $providerManager): void {
@@ -179,5 +182,10 @@ class Application extends App implements IBootstrap {
 
 	private function registerHooks(): void {
 		Util::connectHook('\OCP\Config', 'js', '\OCA\Files\App', 'extendJsConfig');
+	}
+
+	private function registerLegacyEvents(EventDispatcherInterface $dispatcher): void {
+		$listener = new HiddenFolderListener();
+		$dispatcher->addListener('OCP\Share::preShare', [$listener, 'handlePreShare']);
 	}
 }
