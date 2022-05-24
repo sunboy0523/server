@@ -34,6 +34,7 @@ use OCP\Files\Storage\IChunkedFileWrite;
 use OCP\Files\Storage\IProcessingCallbackStorage;
 use OCP\Files\Storage\IStorage;
 use OCP\Files\StorageInvalidException;
+use OCP\ICache;
 use Sabre\DAV\Exception\BadRequest;
 use Sabre\DAV\Exception\InsufficientStorage;
 use Sabre\DAV\Exception\NotFound;
@@ -52,11 +53,15 @@ class ChunkingV2Plugin extends ServerPlugin {
 	private $server;
 	/** @var UploadFolder */
 	private $uploadFolder;
+	/** @var ICache */
+	private $cache;
 
 	private const TEMP_TARGET = '.target';
 
-	private const OBJECT_UPLOAD_TARGET = '{http://nextcloud.org/ns}upload-target';
-	private const OBJECT_UPLOAD_CHUNKTOKEN = '{http://nextcloud.org/ns}upload-chunktoken';
+	public const CACHE_KEY = 's3-multipart';
+	public const UPLOAD_TARGET_FILE_ID = 'upload-target-file-id';
+	public const UPLOAD_TARGET_PATH = 'upload-target-path';
+	public const UPLOAD_ID = 'upload-id';
 
 	private const DESTINATION_HEADER = 'X-S3-Multipart-Destination';
 
@@ -65,12 +70,13 @@ class ChunkingV2Plugin extends ServerPlugin {
 	 */
 	public function initialize(Server $server) {
 		$server->on('afterMethod:MKCOL', [$this, 'beforeMkcol']);
-		// 200 priority to call after the custom properties backend is registered
-		$server->on('beforeMethod:PUT', [$this, 'beforePut'], 200);
-		$server->on('beforeMethod:DELETE', [$this, 'beforeDelete'], 200);
+		$server->on('beforeMethod:PUT', [$this, 'beforePut']);
+		$server->on('beforeMethod:DELETE', [$this, 'beforeDelete']);
 		$server->on('beforeMove', [$this, 'beforeMove'], 90);
 
 		$this->server = $server;
+
+		$this->cache = \OC::$server->getMemCacheFactory()->createDistributed(self::CACHE_KEY);
 	}
 
 	/**
@@ -108,10 +114,10 @@ class ChunkingV2Plugin extends ServerPlugin {
 
 		$uploadId = $storage->beginChunkedFile($targetFile->getInternalPath());
 
-		// DAV properties on the UploadFolder are used in order to properly cleanup stale chunked file writes and to persist the target path
-		$this->server->updateProperties($request->getPath(), [
-			self::OBJECT_UPLOAD_CHUNKTOKEN => $uploadId,
-			self::OBJECT_UPLOAD_TARGET => $targetPath,
+		$this->cache->set($this->uploadFolder->getName(), [
+			self::UPLOAD_TARGET_FILE_ID => $targetFile->getId(),
+			self::UPLOAD_ID => $uploadId,
+			self::UPLOAD_TARGET_PATH => $targetPath,
 		]);
 
 		$response->setStatus(201);
@@ -131,9 +137,9 @@ class ChunkingV2Plugin extends ServerPlugin {
 			return true;
 		}
 
-		$properties = $this->server->getProperties(dirname($request->getPath()) . '/', [ self::OBJECT_UPLOAD_CHUNKTOKEN, self::OBJECT_UPLOAD_TARGET ]);
-		$targetPath = $properties[self::OBJECT_UPLOAD_TARGET];
-		$uploadId = $properties[self::OBJECT_UPLOAD_CHUNKTOKEN];
+		$properties = $this->getUploadSession();
+		$targetPath = $properties[self::UPLOAD_TARGET_PATH] ?? null;
+		$uploadId = $properties[self::UPLOAD_ID] ?? null;
 		if (empty($targetPath) || empty($uploadId)) {
 			throw new PreconditionFailed('Missing metadata for chunked upload');
 		}
@@ -183,9 +189,9 @@ class ChunkingV2Plugin extends ServerPlugin {
 		} catch (StorageInvalidException | BadRequest $e) {
 			return true;
 		}
-		$properties = $this->server->getProperties(dirname($sourcePath) . '/', [ self::OBJECT_UPLOAD_CHUNKTOKEN, self::OBJECT_UPLOAD_TARGET ]);
-		$targetPath = $properties[self::OBJECT_UPLOAD_TARGET];
-		$uploadId = $properties[self::OBJECT_UPLOAD_CHUNKTOKEN];
+		$properties = $this->getUploadSession();
+		$targetPath = $properties[self::UPLOAD_TARGET_PATH] ?? null;
+		$uploadId = $properties[self::UPLOAD_ID] ?? null;
 
 		// FIXME: check if $destination === TARGET
 		if (empty($targetPath) || empty($uploadId)) {
@@ -287,9 +293,9 @@ class ChunkingV2Plugin extends ServerPlugin {
 			return true;
 		}
 
-		$properties = $this->server->getProperties($request->getPath() . '/', [ self::OBJECT_UPLOAD_CHUNKTOKEN, self::OBJECT_UPLOAD_TARGET ]);
-		$targetPath = $properties[self::OBJECT_UPLOAD_TARGET];
-		$uploadId = $properties[self::OBJECT_UPLOAD_CHUNKTOKEN];
+		$properties = $this->getUploadSession();
+		$targetPath = $properties[self::UPLOAD_TARGET_PATH];
+		$uploadId = $properties[self::UPLOAD_ID];
 		if (!$targetPath || !$uploadId) {
 			return true;
 		}
@@ -326,5 +332,9 @@ class ChunkingV2Plugin extends ServerPlugin {
 		}
 
 		return (int)$mtimeFromRequest;
+	}
+
+	public function getUploadSession(): array {
+		return $this->cache->get($this->uploadFolder->getName()) ?? [];
 	}
 }
