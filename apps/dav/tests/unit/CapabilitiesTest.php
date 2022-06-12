@@ -23,7 +23,13 @@
  */
 namespace OCA\DAV\Tests\unit;
 
+use OC\Files\ObjectStore\ObjectStoreStorage;
+use OC\Files\ObjectStore\S3;
 use OCA\DAV\Capabilities;
+use OCP\Files\Folder;
+use OCP\Files\IRootFolder;
+use OCP\Files\ObjectStore\IObjectStoreMultiPartUpload;
+use OCP\Files\Storage\IStorage;
 use Test\TestCase;
 
 /**
@@ -31,7 +37,33 @@ use Test\TestCase;
  */
 class CapabilitiesTest extends TestCase {
 	public function testGetCapabilities() {
-		$capabilities = new Capabilities();
+		$storage = $this->createMock(IStorage::class);
+		$folder = $this->createMock(Folder::class);
+		$rootFolder = $this->createMock(IRootFolder::class);
+		$rootFolder->method('get')->willReturn($folder);
+		$folder->method('getStorage')->willReturn($storage);
+		$capabilities = new Capabilities($rootFolder);
+		$expected = [
+			'dav' => [
+				'chunking' => '1.0',
+				's3-multipart' => false,
+				// disabled because of https://github.com/nextcloud/desktop/issues/4243
+				// 'bulkupload' => '1.0',
+			],
+		];
+		$this->assertSame($expected, $capabilities->getCapabilities());
+	}
+
+	public function testGetCapabilitiesS3() {
+		$objectStore = $this->createMock(S3::class);
+		$storage = $this->createMock(ObjectStoreStorage::class);
+		$folder = $this->createMock(Folder::class);
+		$rootFolder = $this->createMock(IRootFolder::class);
+		$rootFolder->method('get')->willReturn($folder);
+		$folder->method('getStorage')->willReturn($storage);
+		$storage->method('instanceOfStorage')->willReturn(true);
+		$storage->method('getObjectStore')->willReturn($objectStore);
+		$capabilities = new Capabilities($rootFolder);
 		$expected = [
 			'dav' => [
 				'chunking' => '1.0',

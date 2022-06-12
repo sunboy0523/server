@@ -645,7 +645,7 @@ Feature: webdav-related
 		And user "user0" uploads new chunk v2 file "2" to id "chunking-42"
 		And user "user0" uploads new chunk v2 file "3" to id "chunking-42"
 		And user "user0" moves new chunk v2 file with id "chunking-42"
-		Then the HTTP status code should be "207"
+		Then the S3 multipart upload was successful with status "201"
 		When As an "user0"
 		And Downloading file "/myChunkedFile1.txt"
 		Then Downloaded content should be the created file
@@ -660,7 +660,7 @@ Feature: webdav-related
 		And user "user0" uploads new chunk v2 file "2" to id "chunking-42"
 		And user "user0" uploads new chunk v2 file "1" to id "chunking-42"
 		And user "user0" moves new chunk v2 file with id "chunking-42"
-		Then the HTTP status code should be "207"
+		Then the S3 multipart upload was successful with status "201"
 		When As an "user0"
 		And Downloading file "/myChunkedFile.txt"
 		Then Downloaded content should be the created file
@@ -679,7 +679,7 @@ Feature: webdav-related
 		And user "user0" uploads new chunk v2 file "2" to id "chunking-random"
 		And user "user0" uploads new chunk v2 file "4" to id "chunking-random"
 		And user "user0" moves new chunk v2 file with id "chunking-random"
-		Then the HTTP status code should be "207"
+		Then the S3 multipart upload was successful with status "201"
 		When As an "user0"
 		And Downloading file "/myChunkedFile.txt"
 		Then Downloaded content should be the created file
@@ -710,7 +710,7 @@ Feature: webdav-related
 		And user "user0" uploads new chunk v2 file "2" to id "chunking-42"
 		And user "user0" uploads new chunk v2 file "3" to id "chunking-42"
 		And user "user0" moves new chunk v2 file with id "chunking-42"
-		Then the HTTP status code should be "207"
+		Then the S3 multipart upload was successful with status "201"
 		When As an "user0"
 		And Downloading file "/äöü.txt"
 		Then Downloaded content should be the created file
@@ -726,7 +726,7 @@ Feature: webdav-related
 		And user "user0" uploads new chunk v2 file "2" to id "chunking-42"
 		And user "user0" uploads new chunk v2 file "3" to id "chunking-42"
 		And user "user0" moves new chunk v2 file with id "chunking-42"
-		Then the HTTP status code should be "207"
+		Then the S3 multipart upload was successful with status "201"
 		When As an "user0"
 		And Downloading file "/üäöé/äöü.txt"
 		Then Downloaded content should be the created file

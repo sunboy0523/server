@@ -56,6 +56,7 @@ trait WebDav {
 
 	private string $s3MultipartDestination;
 	private string $uploadId;
+	private bool $hasS3Multipart;
 
 	/**
 	 * @Given /^using dav path "([^"]*)"$/
@@ -696,12 +697,21 @@ trait WebDav {
 	 * @Given user :user creates a new chunking v2 upload with id :id and destination :targetDestination
 	 */
 	public function userCreatesANewChunkingv2UploadWithIdAndDestination($user, $id, $targetDestination) {
+		$this->checkMultipartCapability($user);
 		$this->s3MultipartDestination = $this->getTargetDestination($user, $targetDestination);
 		$this->newUploadId();
 		$destination = '/uploads/' . $user . '/' . $this->getUploadId($id);
 		$this->response = $this->makeDavRequest($user, 'MKCOL', $destination, [
 			'X-S3-Multipart-Destination' => $this->s3MultipartDestination,
 		], null, "uploads");
+	}
+
+	private function checkMultipartCapability($user) {
+		$this->asAn($user);
+		$this->sendingTo('GET', '/cloud/capabilities?format=json');
+		$data = $this->response->getBody()->getContents();
+		$davCapabilities = json_decode($data, true)['ocs']['data']['capabilities']['dav'];
+		$this->hasS3Multipart = $davCapabilities['s3-multipart'] ?? false;
 	}
 
 	/**
@@ -966,5 +976,16 @@ trait WebDav {
 			$content .= file_get_contents($part);
 		}
 		Assert::assertEquals($content, (string)$this->response->getBody());
+	}
+
+	/**
+	 * @Then /^the S3 multipart upload was successful with status "([^"]*)"$/
+	 */
+	public function theSmultipartUploadWasSuccessful($status) {
+		if ($this->hasS3Multipart) {
+			Assert::assertEquals(207, $this->response->getStatusCode());
+		} else {
+			Assert::assertEquals((int)$status, $this->response->getStatusCode());
+		}
 	}
 }

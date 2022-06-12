@@ -22,14 +22,27 @@
  */
 namespace OCA\DAV;
 
+use OC\Files\ObjectStore\ObjectStoreStorage;
 use OCP\Capabilities\ICapability;
+use OCP\Files\IRootFolder;
+use OCP\Files\ObjectStore\IObjectStoreMultiPartUpload;
 
 class Capabilities implements ICapability {
+
+	private IRootFolder $rootFolder;
+
+	public function __construct(IRootFolder $rootFolder) {
+		$this->rootFolder = $rootFolder;
+	}
+
 	public function getCapabilities() {
+		/** @var ObjectStoreStorage $rootStorage */
+		$rootStorage = $this->rootFolder->get('')->getStorage();
+
 		return [
 			'dav' => [
 				'chunking' => '1.0',
-				's3-multipart' => true,
+				's3-multipart' => $rootStorage->instanceOfStorage(ObjectStoreStorage::class) && $rootStorage->getObjectStore() instanceof IObjectStoreMultiPartUpload,
 				// disabled because of https://github.com/nextcloud/desktop/issues/4243
 				// 'bulkupload' => '1.0',
 			]
