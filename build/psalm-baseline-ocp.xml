@@ -10,6 +10,11 @@
       <code>OC</code>
     </UndefinedClass>
   </file>
+  <file src="lib/public/Group/Backend/ABackend.php">
+    <UndefinedClass occurrences="2">
+      <code>OC</code>
+    </UndefinedClass>
+  </file>
   <file src="lib/public/App.php">
     <UndefinedClass occurrences="2">
       <code>\OC</code>
