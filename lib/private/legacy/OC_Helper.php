@@ -48,6 +48,7 @@ use OC\Files\Filesystem;
 use OCP\Files\Mount\IMountPoint;
 use OCP\ICacheFactory;
 use OCP\IBinaryFinder;
+use OCP\IConfig;
 use OCP\IUser;
 use Psr\Log\LoggerInterface;
 
@@ -486,6 +487,15 @@ class OC_Helper {
 			$used = 0;
 		}
 		$quota = \OCP\Files\FileInfo::SPACE_UNLIMITED;
+
+		// If the admin overrides the global instance quota we default to the value set
+		/** @var IConfig $config */
+		$config = \OC::$server->get(IConfig::class);
+		$configQuota = (int) $config->getAppValue('core', 'quota_instance_global', '0');
+		if ($configQuota > 0) {
+			$quota = $configQuota;
+		}
+
 		$mount = $rootInfo->getMountPoint();
 		$storage = $mount->getStorage();
 		$sourceStorage = $storage;
