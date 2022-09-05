@@ -270,8 +270,14 @@ class PublicKeyTokenProvider implements IProvider {
 		foreach ($tokens as $t) {
 			$publicKey = $t->getPublicKey();
 			$t->setPassword($this->encryptPassword($password, $publicKey));
+			$t->setPasswordHash($this->hashPassword($password));
 			$this->updateToken($t);
 		}
+	}
+
+	private function hashPassword(string $password) : string {
+		$secret = $this->config->getSystemValue('secret');
+		return hash('sha512', $password . $secret);
 	}
 
 	public function rotate(IToken $token, string $oldTokenId, string $newTokenId): IToken {
@@ -373,6 +379,7 @@ class PublicKeyTokenProvider implements IProvider {
 				throw new \RuntimeException('Trying to save a password with more than 469 characters is not supported. If you want to use big passwords, disable the auth.storeCryptedPassword option in config.php');
 			}
 			$dbToken->setPassword($this->encryptPassword($password, $publicKey));
+			$dbToken->setPasswordHash($this->hashPassword($password));
 		}
 
 		$dbToken->setName($name);
@@ -409,9 +416,10 @@ class PublicKeyTokenProvider implements IProvider {
 		$tokens = $this->mapper->getTokenByUser($uid);
 		foreach ($tokens as $t) {
 			$publicKey = $t->getPublicKey();
-			$encryptedPassword = $this->encryptPassword($password, $publicKey);
-			if ($t->getPassword() !== $encryptedPassword) {
-				$t->setPassword($encryptedPassword);
+			$passwordHash = $this->hashPassword($password);
+			if ($t->getPasswordHash() !== $passwordHash) {
+				$t->setPassword($this->encryptPassword($password, $publicKey));
+				$t->setPasswordHash($passwordHash);
 				$t->setPasswordInvalid(false);
 				$this->updateToken($t);
 			}
