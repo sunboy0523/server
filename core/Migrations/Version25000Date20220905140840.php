@@ -48,7 +48,7 @@ class Version25000Date20220905140840 extends SimpleMigrationStep {
 		if (!$comments->hasColumn('password_hash')) {
 			$comments->addColumn('password_hash', Types::STRING, [
 				'notnull' => false,
-				'length' => 512,
+				'length' => 60,
 			]);
 			return $schema;
 		}

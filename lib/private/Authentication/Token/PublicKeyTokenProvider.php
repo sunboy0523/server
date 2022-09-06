@@ -276,8 +276,7 @@ class PublicKeyTokenProvider implements IProvider {
 	}
 
 	private function hashPassword(string $password) : string {
-		$secret = $this->config->getSystemValue('secret');
-		return hash('sha512', $password . $secret);
+		return password_hash($password,  PASSWORD_BCRYPT);
 	}
 
 	public function rotate(IToken $token, string $oldTokenId, string $newTokenId): IToken {
@@ -414,10 +413,10 @@ class PublicKeyTokenProvider implements IProvider {
 
 		// Update the password for all tokens
 		$tokens = $this->mapper->getTokenByUser($uid);
+		$passwordHash = $this->hashPassword($password);
 		foreach ($tokens as $t) {
 			$publicKey = $t->getPublicKey();
-			$passwordHash = $this->hashPassword($password);
-			if ($t->getPasswordHash() !== $passwordHash) {
+			if (password_verify($password, $t->getPasswordHash())) {
 				$t->setPassword($this->encryptPassword($password, $publicKey));
 				$t->setPasswordHash($passwordHash);
 				$t->setPasswordInvalid(false);
