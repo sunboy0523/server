@@ -281,7 +281,7 @@ class PublicKeyTokenProvider implements IProvider {
 		}
 	}
 
-	private function hashPassword(string $password) : string {
+	private function hashPassword(string $password): string {
 		return $this->hasher->hash(sha1($password) . $password);
 	}
 
