@@ -57,6 +57,7 @@ class PublicKeyTokenProviderTest extends TestCase {
 		parent::setUp();
 
 		$this->mapper = $this->createMock(PublicKeyTokenMapper::class);
+		$this->hasher = \OC::$server->getHasher();
 		$this->crypto = \OC::$server->getCrypto();
 		$this->config = $this->createMock(IConfig::class);
 		$this->config->method('getSystemValue')
@@ -73,7 +74,7 @@ class PublicKeyTokenProviderTest extends TestCase {
 			->willReturn($this->time);
 
 		$this->tokenProvider = new PublicKeyTokenProvider($this->mapper, $this->crypto, $this->config, $this->logger,
-			$this->timeFactory);
+			$this->timeFactory, $this->hasher);
 	}
 
 	public function testGenerateToken() {

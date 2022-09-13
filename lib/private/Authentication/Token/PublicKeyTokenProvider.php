@@ -34,11 +34,13 @@ use OC\Authentication\Exceptions\InvalidTokenException;
 use OC\Authentication\Exceptions\TokenPasswordExpiredException;
 use OC\Authentication\Exceptions\PasswordlessTokenException;
 use OC\Authentication\Exceptions\WipeTokenException;
+use OC\Security\Hasher;
 use OCP\Cache\CappedMemoryCache;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IConfig;
 use OCP\Security\ICrypto;
+use OCP\Security\IHasher;
 use Psr\Log\LoggerInterface;
 
 class PublicKeyTokenProvider implements IProvider {
@@ -60,11 +62,15 @@ class PublicKeyTokenProvider implements IProvider {
 	/** @var CappedMemoryCache */
 	private $cache;
 
+	/** @var IHasher */
+	private $hasher;
+
 	public function __construct(PublicKeyTokenMapper $mapper,
-								ICrypto $crypto,
-								IConfig $config,
-								LoggerInterface $logger,
-								ITimeFactory $time) {
+								ICrypto              $crypto,
+								IConfig              $config,
+								LoggerInterface      $logger,
+								ITimeFactory         $time,
+								IHasher $hasher) {
 		$this->mapper = $mapper;
 		$this->crypto = $crypto;
 		$this->config = $config;
@@ -72,6 +78,7 @@ class PublicKeyTokenProvider implements IProvider {
 		$this->time = $time;
 
 		$this->cache = new CappedMemoryCache();
+		$this->hasher = $hasher;
 	}
 
 	/**
@@ -276,7 +283,7 @@ class PublicKeyTokenProvider implements IProvider {
 	}
 
 	private function hashPassword(string $password) : string {
-		return password_hash($password, PASSWORD_BCRYPT);
+		return $this->hasher->hash(sha1($password) . $password);
 	}
 
 	public function rotate(IToken $token, string $oldTokenId, string $newTokenId): IToken {
