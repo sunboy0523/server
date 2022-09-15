@@ -44,7 +44,7 @@ class Version25000Date20220905140840 extends SimpleMigrationStep {
 		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
 
-		$comments = $schema->getTable('authtoken');
+		$authTokenTable = $schema->getTable('authtoken');
 		if (!$comments->hasColumn('password_hash')) {
 			$comments->addColumn('password_hash', Types::STRING, [
 				'notnull' => false,
