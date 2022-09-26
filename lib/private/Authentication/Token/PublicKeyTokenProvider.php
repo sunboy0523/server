@@ -64,10 +64,10 @@ class PublicKeyTokenProvider implements IProvider {
 	private IHasher $hasher;
 
 	public function __construct(PublicKeyTokenMapper $mapper,
-								ICrypto              $crypto,
-								IConfig              $config,
-								LoggerInterface      $logger,
-								ITimeFactory         $time,
+								ICrypto $crypto,
+								IConfig $config,
+								LoggerInterface $logger,
+								ITimeFactory $time,
 								IHasher $hasher) {
 		$this->mapper = $mapper;
 		$this->crypto = $crypto;
