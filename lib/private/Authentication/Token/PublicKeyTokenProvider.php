@@ -61,8 +61,7 @@ class PublicKeyTokenProvider implements IProvider {
 	/** @var CappedMemoryCache */
 	private $cache;
 
-	/** @var IHasher */
-	private $hasher;
+	private IHasher $hasher;
 
 	public function __construct(PublicKeyTokenMapper $mapper,
 								ICrypto              $crypto,
