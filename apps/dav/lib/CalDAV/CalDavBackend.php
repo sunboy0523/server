@@ -1236,17 +1236,20 @@ class CalDavBackend extends AbstractBackend implements SyncSupport, Subscription
 		}
 		// For a more specific error message we also try to explicitly look up the UID but as a deleted entry
 		$qbDel = $this->db->getQueryBuilder();
-		$qbDel->select($qb->func()->count('*'))
+		$qbDel->select('*')
 			->from('calendarobjects')
 			->where($qbDel->expr()->eq('calendarid', $qbDel->createNamedParameter($calendarId)))
 			->andWhere($qbDel->expr()->eq('uid', $qbDel->createNamedParameter($extraData['uid'])))
 			->andWhere($qbDel->expr()->eq('calendartype', $qbDel->createNamedParameter($calendarType)))
 			->andWhere($qbDel->expr()->isNotNull('deleted_at'));
 		$result = $qbDel->executeQuery();
-		$count = (int) $result->fetchOne();
+		$found = $result->fetch();
 		$result->closeCursor();
-		if ($count !== 0) {
-			throw new BadRequest('Deleted calendar object with uid already exists in this calendar collection.');
+		if ($found !== false) {
+			// when importing a calendar obejct already previously imported
+			// we first restore it and then update the event to the new data
+			$this->restoreCalendarObject($result['calendardata']);
+			return $this->updateCalendarObject($calendarId, $found['uri'], $calendarData, $calendarType);
 		}
 
 		$query = $this->db->getQueryBuilder();
