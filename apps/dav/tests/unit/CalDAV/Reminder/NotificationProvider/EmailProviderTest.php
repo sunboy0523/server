@@ -257,12 +257,12 @@ class EmailProviderTest extends AbstractNotificationProviderTest {
 
 		$this->l10nFactory->expects(self::exactly(2))
 			->method('languageExists')
-			->withConsecutive(['dav', 'de'], ['dav', 'en'])
+			->withConsecutive(['dav', 'en'], ['dav', 'de'])
 			->willReturn(true);
 
 		$this->l10nFactory->expects(self::exactly(2))
 			->method('get')
-			->withConsecutive(['dav', 'de'], ['dav', 'en'])
+			->withConsecutive(['dav', 'en'], ['dav', 'de'])
 			->willReturnOnConsecutiveCalls([$enL10N],[$deL10N]);
 
 		$template1 = $this->getTemplateMock();
