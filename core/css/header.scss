@@ -172,6 +172,7 @@
 		left: 12px;
 		top: 1px;
 		bottom: 1px;
+		filter: var(--primary-invert-if-bright);
 	}
 
 	.header-appname-container {
