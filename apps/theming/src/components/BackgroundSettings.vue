@@ -263,6 +263,7 @@ export default {
 				content: '';
 				display: block;
 				height: 100%;
+				filter: var(--background-invert-if-dark);
 			}
 
 			&[data-color-bright]:after {
