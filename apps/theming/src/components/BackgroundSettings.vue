@@ -256,14 +256,13 @@ export default {
 
 		&.active:not(.icon-loading) {
 			&:after {
-				background-image: var(--icon-checkmark-white);
+				background-image: var(--original-icon-checkmark-white);
 				background-repeat: no-repeat;
 				background-position: center;
 				background-size: 44px;
 				content: '';
 				display: block;
 				height: 100%;
-				filter: var(--background-invert-if-dark);
 			}
 
 			&[data-color-bright]:after {
