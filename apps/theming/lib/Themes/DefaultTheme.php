@@ -203,6 +203,8 @@ class DefaultTheme implements ITheme {
 			'--background-invert-if-bright' => 'invert(100%)',
 
 			'--image-main-background' => "url('" . $this->urlGenerator->imagePath('core', 'app-background.jpg') . "')",
+
+			'--logo-invert-if-default' => ($hasCustomLogoHeader && $this->util->invertTextColor($this->primaryColor)) ? 'no' : 'invert(100%)',
 		];
 
 		// Primary variables
