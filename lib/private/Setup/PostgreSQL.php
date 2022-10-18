@@ -71,11 +71,14 @@ class PostgreSQL extends AbstractDatabase {
 				$this->dbPassword = \OC::$server->getSecureRandom()->generate(30, ISecureRandom::CHAR_ALPHANUMERIC);
 
 				$this->createDBUser($connection);
-				// Go to main database and grant create on schema public
-				// This is implemented to make possible work with PostgreSQL version 15:
+
+				// Go to the main database and grant create on the public schema
+				// The code below is implemented to make installing possible with PostgreSQL version 15:
 				// https://www.postgresql.org/docs/release/15.0/
-				//
-				// From release note: For new databases having no need to defend against insider threats, granting CREATE permission will yield the behavior of prior releases.
+				// From the release notes: For new databases having no need to defend against insider threats, granting CREATE permission will yield the behavior of prior releases
+				// Therefore we assume that the database is only used by one user/service which is Nextcloud
+				// Additional services should get installed in a separate database in order to stay secure
+				// Also see https://www.postgresql.org/docs/15/ddl-schemas.html#DDL-SCHEMAS-PATTERNS
 				$connectionMainDatabase->executeQuery('GRANT CREATE ON SCHEMA public TO ' . $this->dbUser);
 				$connectionMainDatabase->close();
 			}
