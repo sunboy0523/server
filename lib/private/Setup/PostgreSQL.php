@@ -62,6 +62,7 @@ class PostgreSQL extends AbstractDatabase {
 			}
 
 			if ($canCreateRoles) {
+				$connectionMainDatabase = $this->connect();
 				//use the admin login data for the new database user
 
 				//add prefix to the postgresql user name to prevent collisions
@@ -70,6 +71,9 @@ class PostgreSQL extends AbstractDatabase {
 				$this->dbPassword = \OC::$server->getSecureRandom()->generate(30, ISecureRandom::CHAR_ALPHANUMERIC);
 
 				$this->createDBUser($connection);
+				// Go to main database and grant all privileges on schema public
+				$connectionMainDatabase->executeQuery('GRANT ALL PRIVILEGES ON SCHEMA public TO ' . $this->dbUser);
+				$connectionMainDatabase->close();
 			}
 
 			$this->config->setValues([
