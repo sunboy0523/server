@@ -71,8 +71,12 @@ class PostgreSQL extends AbstractDatabase {
 				$this->dbPassword = \OC::$server->getSecureRandom()->generate(30, ISecureRandom::CHAR_ALPHANUMERIC);
 
 				$this->createDBUser($connection);
-				// Go to main database and grant all privileges on schema public
-				$connectionMainDatabase->executeQuery('GRANT ALL PRIVILEGES ON SCHEMA public TO ' . $this->dbUser);
+				// Go to main database and grant create on schema public
+				// This is implemented to make possible work with PostgreSQL version 15:
+				// https://www.postgresql.org/docs/release/15.0/
+				//
+				// From release note: For new databases having no need to defend against insider threats, granting CREATE permission will yield the behavior of prior releases.
+				$connectionMainDatabase->executeQuery('GRANT CREATE ON SCHEMA public TO ' . $this->dbUser);
 				$connectionMainDatabase->close();
 			}
 
