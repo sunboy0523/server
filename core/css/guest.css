@@ -24,7 +24,7 @@ body {
 	color: var(--color-text);
 	text-align: center;
 	background-color: var(--color-main-background-not-plain, var(--color-primary));
-	background-image: var(--image-background, var(--image-background-plain, url('../../../core/img/app-background.jpg'), linear-gradient(40deg, #0082c9 0%, #30b6ff 100%)));
+	background-image: var(--image-background, var(--image-background-plain, linear-gradient(40deg, #0082c9 0%, #30b6ff 100%)));
     background-attachment: fixed;
 	min-height: 100%; /* fix sticky footer */
 	height: auto;

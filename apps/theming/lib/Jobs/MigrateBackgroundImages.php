@@ -60,7 +60,7 @@ class MigrateBackgroundImages extends QueuedJob {
 
 		$dashboardData = $this->appDataFactory->get('dashboard');
 
-		$userIds = $this->config->getUsersForUserValue('theming', 'background', 'custom');
+		$userIds = $this->config->getUsersForUserValue('theming', 'background', BackgroundService::BACKGROUND_CUSTOM);
 
 		$notSoFastMode = \count($userIds) > 5000;
 		$reTrigger = false;

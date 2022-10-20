@@ -478,7 +478,7 @@ class ThemingDefaultsTest extends TestCase {
 		$this->config
 			->expects($this->once())
 			->method('getUserValue')
-			->with('user', 'theming', 'background', '')
+			->with('user', 'theming', 'background_image', '')
 			->willReturn(array_keys(BackgroundService::SHIPPED_BACKGROUNDS)[$backgroundIndex]);
 
 		$this->assertEquals($background['primary_color'], $this->template->getColorPrimary());
@@ -496,7 +496,7 @@ class ThemingDefaultsTest extends TestCase {
 		$this->config
 			->expects($this->once())
 			->method('getUserValue')
-			->with('user', 'theming', 'background', '')
+			->with('user', 'theming', 'background_image', '')
 			->willReturn('#fff');
 
 		$this->assertEquals('#fff', $this->template->getColorPrimary());
@@ -514,7 +514,7 @@ class ThemingDefaultsTest extends TestCase {
 		$this->config
 			->expects($this->once())
 			->method('getUserValue')
-			->with('user', 'theming', 'background', '')
+			->with('user', 'theming', 'background_image', '')
 			->willReturn('nextcloud');
 
 		$this->assertEquals($this->template->getDefaultColorPrimary(), $this->template->getColorPrimary());
@@ -754,7 +754,7 @@ class ThemingDefaultsTest extends TestCase {
 				['logo', true, 'custom-logo?v=0'],
 				['logoheader', true, 'custom-logoheader?v=0'],
 				['favicon', true, 'custom-favicon?v=0'],
-				['background', true, 'custom-background?v=0'],
+				['background_image', true, 'custom-background?v=0'],
 			]);
 
 		$expected = [
