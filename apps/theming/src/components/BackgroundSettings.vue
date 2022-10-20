@@ -27,10 +27,12 @@
 	<div class="background-selector">
 		<!-- Custom background -->
 		<button class="background background__filepicker"
-			:class="{ 'background--active': backgroundImage === 'custom' }"
+			:class="{ 'icon-loading': loading === 'custom', 'background--active': backgroundImage === 'custom' }"
+			:data-color-bright="invertTextColor(Theming.color)"
 			tabindex="0"
 			@click="pickFile">
 			{{ t('theming', 'Custom background') }}
+			<Check :size="44" />
 		</button>
 
 		<!-- Default background -->
@@ -73,13 +75,13 @@
 			tabindex="0"
 			@click="removeBackground">
 			{{ t('theming', 'Remove background') }}
-			<Close :size="24" />
+			<Close :size="32" />
 		</button>
 	</div>
 </template>
 
 <script>
-import { generateFilePath, generateUrl } from '@nextcloud/router'
+import { generateFilePath, generateRemoteUrl, generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
 import axios from '@nextcloud/axios'
 import Check from 'vue-material-design-icons/Check.vue'
@@ -87,6 +89,10 @@ import Close from 'vue-material-design-icons/Close.vue'
 import debounce from 'debounce'
 import NcColorPicker from '@nextcloud/vue/dist/Components/NcColorPicker'
 import Tooltip from '@nextcloud/vue/dist/Directives/Tooltip'
+import Vibrant from 'node-vibrant'
+import { Palette } from 'node-vibrant/lib/color'
+import { getFilePickerBuilder } from '@nextcloud/dialogs'
+import { getCurrentUser } from '@nextcloud/auth'
 
 const backgroundColor = loadState('theming', 'backgroundColor')
 const backgroundImage = loadState('theming', 'backgroundImage')
@@ -95,6 +101,12 @@ const themingDefaultBackground = loadState('theming', 'themingDefaultBackground'
 const defaultShippedBackground = loadState('theming', 'defaultShippedBackground')
 
 const prefixWithBaseUrl = (url) => generateFilePath('theming', '', 'img/background/') + url
+const picker = getFilePickerBuilder(t('theming', 'Insert from {productName}', { productName: OC.theme.name }))
+	.setMultiSelect(false)
+	.setModal(true)
+	.setType(1)
+	.setMimeTypeFilter(['image/png', 'image/gif', 'image/jpeg', 'image/svg+xml', 'image/svg'])
+	.build()
 
 export default {
 	name: 'BackgroundSettings',
@@ -213,9 +225,9 @@ export default {
 			this.update(result.data)
 		},
 
-		async setFile(path) {
+		async setFile(path, color = null) {
 			this.loading = 'custom'
-			const result = await axios.post(generateUrl('/apps/theming/background/custom'), { value: path })
+			const result = await axios.post(generateUrl('/apps/theming/background/custom'), { value: path, color })
 			this.update(result.data)
 		},
 
@@ -228,19 +240,49 @@ export default {
 		async pickColor(event) {
 			this.loading = 'color'
 			const color = event?.target?.dataset?.color || this.Theming?.color || '#0082c9'
-			const result = await axios.post(generateUrl('/apps/theming/background/color'), { value: color })
+			const result = await axios.post(generateUrl('/apps/theming/background/color'), { color })
 			this.update(result.data)
 		},
 		debouncePickColor: debounce(function() {
 			this.pickColor(...arguments)
 		}, 200),
 
-		pickFile() {
-			window.OC.dialogs.filepicker(t('theming', 'Insert from {productName}', { productName: OC.theme.name }), (path, type) => {
-				if (type === OC.dialogs.FILEPICKER_TYPE_CHOOSE) {
-					this.setFile(path)
-				}
-			}, false, ['image/png', 'image/gif', 'image/jpeg', 'image/svg'], true, OC.dialogs.FILEPICKER_TYPE_CHOOSE)
+		async pickFile() {
+			const path = await picker.pick()
+			this.loading = 'custom'
+
+			// Extract primary color from image
+			let response = null
+			let color = null
+			try {
+				response = await axios.get(generateRemoteUrl('dav/files/' + getCurrentUser().uid + path), { responseType: 'blob' })
+				const blobUrl = URL.createObjectURL(response.data)
+				const palette = await this.getColorPaletteFromBlob(blobUrl)
+				color = palette?.DarkVibrant?.hex
+				console.debug('Extracted colour', color, 'from custom image', { palette, path })
+				this.setFile(path, color)
+			} catch (error) {
+				this.setFile(path)
+				console.error('Unable to extract colour from custom image', { error, path, response, color })
+			}
+		},
+
+		/**
+		 * Extract a Vibrant color palette from a blob URL
+		 *
+		 * @param {string} blobUrl the blob URL
+		 * @return {Promise<Palette>}
+		 */
+		getColorPaletteFromBlob(blobUrl) {
+			return new Promise((resolve, reject) => {
+				const vibrant = new Vibrant(blobUrl)
+				vibrant.getPalette((error, palette) => {
+					if (error) {
+						reject(error)
+					}
+					resolve(palette)
+				})
+			})
 		},
 	},
 }
@@ -263,6 +305,13 @@ export default {
 		background-position: center center;
 		background-size: cover;
 
+		&__filepicker {
+			&.background--active {
+				color: white;
+				background-image: var(--image-background);
+			}
+		}
+
 		&__default {
 			background-color: var(--color-primary-default);
 			background-image: var(--image-background-default);
@@ -275,6 +324,12 @@ export default {
 		&__color {
 			color: var(--color-primary-text);
 			background-color: var(--color-primary-default);
+		}
+
+		// Over a background image
+		&__default,
+		&__shipped {
+			color: white;
 		}
 
 		// Text and svg icon dark on bright background
@@ -294,18 +349,14 @@ export default {
 			margin: 4px;
 		}
 
-		&__default,
-		&__shipped {
-			color: white;
-			span {
-				display: none;
-			}
+		&__filepicker span,
+		&__default span,
+		&__shipped span {
+			display: none;
 		}
 
-		&--active:not(.icon-loading) {
-			span {
-				display: block;
-			}
+		&--active:not(.icon-loading) span {
+			display: block !important;
 		}
 	}
 }
