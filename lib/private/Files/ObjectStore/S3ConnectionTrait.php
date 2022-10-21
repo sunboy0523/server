@@ -243,10 +243,11 @@ trait S3ConnectionTrait {
 			return [];
 		}
 
+		$rawKey = base64_decode($key);
 		return [
 			'SSECustomerAlgorithm' => 'AES256',
-			'SSECustomerKey' => $key,
-			'SSECustomerKeyMD5' => md5($key, true)
+			'SSECustomerKey' => $rawKey,
+			'SSECustomerKeyMD5' => md5($rawKey, true)
 		];
 	}
 }
