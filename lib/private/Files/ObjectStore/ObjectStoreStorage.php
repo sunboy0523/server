@@ -315,7 +315,7 @@ class ObjectStoreStorage extends \OC\Files\Storage\Common {
 							return false; // keep backward compatibility
 						}
 						$streamStat = fstat($handle);
-						$actualSize = (int)$streamStat['size'] ?? -1;
+						$actualSize = $streamStat['size'] ?? -1;
 						if ($actualSize > -1 && $actualSize !== $filesize) {
 							$this->getCache()->update((int)$stat['fileid'], ['size' => $actualSize]);
 						}
