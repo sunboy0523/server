@@ -560,7 +560,7 @@ services:
 - name: cache
   image: ghcr.io/nextcloud/continuous-integration-redis:latest
 - name: postgres-15
-  image: ghcr.io/nextcloud/continuous-integration-postgres-15:postgres-15
+  image: ghcr.io/nextcloud/continuous-integration-postgres-15:latest
   environment:
     POSTGRES_USER: oc_autotest
     POSTGRES_DB: oc_autotest_dummy
