@@ -542,6 +542,42 @@ trigger:
 
 ---
 kind: pipeline
+name: postgres15-php8.0
+
+steps:
+- name: submodules
+  image: ghcr.io/nextcloud/continuous-integration-alpine-git:latest
+  commands:
+    - git submodule update --init
+- name: postgres-php8.0
+  image: ghcr.io/nextcloud/continuous-integration-php8.0:latest
+  commands:
+    - bash tests/drone-run-php-tests.sh || exit 0
+    - sleep 10 # gives the database enough time to initialize
+    - POSTGRES=15 NOCOVERAGE=true TEST_SELECTION=DB ./autotest.sh pgsql
+
+services:
+- name: cache
+  image: ghcr.io/nextcloud/continuous-integration-redis:latest
+- name: postgres-15
+  image: ghcr.io/nextcloud/continuous-integration-postgres-15:postgres-15
+  environment:
+    POSTGRES_USER: oc_autotest
+    POSTGRES_DB: oc_autotest_dummy
+    POSTGRES_PASSWORD: owncloud
+  tmpfs:
+    - /var/lib/postgresql/data
+
+trigger:
+  branch:
+    - master
+    - stable*
+  event:
+    - pull_request
+    - push
+
+---
+kind: pipeline
 name: integration-capabilities_features
 
 steps:
