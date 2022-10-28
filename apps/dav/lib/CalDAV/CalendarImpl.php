@@ -150,7 +150,7 @@ class CalendarImpl implements ICreateFromString {
 		$server = new InvitationResponseServer(false);
 
 		/** @var CustomPrincipalPlugin $plugin */
-		$plugin = $server->server->getPlugin('auth');
+		$plugin = $server->getServer()->getPlugin('auth');
 		// we're working around the previous implementation
 		// that only allowed the public system principal to be used
 		// so set the custom principal here
@@ -166,14 +166,14 @@ class CalendarImpl implements ICreateFromString {
 
 		// Force calendar change URI
 		/** @var Schedule\Plugin $schedulingPlugin */
-		$schedulingPlugin = $server->server->getPlugin('caldav-schedule');
+		$schedulingPlugin = $server->getServer()->getPlugin('caldav-schedule');
 		$schedulingPlugin->setPathOfCalendarObjectChange($fullCalendarFilename);
 
 		$stream = fopen('php://memory', 'rb+');
 		fwrite($stream, $calendarData);
 		rewind($stream);
 		try {
-			$server->server->createFile($fullCalendarFilename, $stream);
+			$server->getServer()->createFile($fullCalendarFilename, $stream);
 		} catch (Conflict $e) {
 			throw new CalendarException('Could not create new calendar event: ' . $e->getMessage(), 0, $e);
 		} finally {
@@ -185,10 +185,10 @@ class CalendarImpl implements ICreateFromString {
 	 * @throws CalendarException
 	 */
 	public function handleIMipMessage(string $name, string $calendarData): void {
-		$server = new InvitationResponseServer(false);
+		$server = $this->getInvitationResponseServer();
 
 		/** @var CustomPrincipalPlugin $plugin */
-		$plugin = $server->server->getPlugin('auth');
+		$plugin = $server->getServer()->getPlugin('auth');
 		// we're working around the previous implementation
 		// that only allowed the public system principal to be used
 		// so set the custom principal here
@@ -199,7 +199,7 @@ class CalendarImpl implements ICreateFromString {
 		}
 		// Force calendar change URI
 		/** @var Schedule\Plugin $schedulingPlugin */
-		$schedulingPlugin = $server->server->getPlugin('caldav-schedule');
+		$schedulingPlugin = $server->getServer()->getPlugin('caldav-schedule');
 		// Let sabre handle the rest
 		$iTipMessage = new Message();
 		/** @var VCalendar $vObject */
@@ -234,5 +234,9 @@ class CalendarImpl implements ICreateFromString {
 		$iTipMessage->sequence = isset($vEvent->{'SEQUENCE'}) ? (int)$vEvent->{'SEQUENCE'}->getValue() : 0;
 		$iTipMessage->message = $vObject;
 		$schedulingPlugin->scheduleLocalDelivery($iTipMessage);
+	}
+
+	public function getInvitationResponseServer() {
+		return new InvitationResponseServer(false);
 	}
 }
