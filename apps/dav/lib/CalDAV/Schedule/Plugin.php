@@ -168,9 +168,9 @@ class Plugin extends \Sabre\CalDAV\Schedule\Plugin {
 
 		// We only care when the message was successfully delivered locally
 		if ($iTipMessage->scheduleStatus !== '1.2;Message delivered locally') {
+			\OC::$server->get(\Psr\Log\LoggerInterface::class)->debug($iTipMessage->scheduleStatus);
 			return;
 		}
-
 		// We only care about request. reply and cancel are properly handled
 		// by parent::scheduleLocalDelivery already
 		if (strcasecmp($iTipMessage->method, 'REQUEST') !== 0) {
