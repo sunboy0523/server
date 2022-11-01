@@ -194,7 +194,7 @@ class EmailProvider extends AbstractProvider {
 		}
 
 		$organizer = $vevent->ORGANIZER;
-		if (strcasecmp($organizer->getValue(), 'mailto:') <= 0) {
+		if (strcasecmp($organizer->getValue(), 'mailto:') !== 0) {
 			return null;
 		}
 

@@ -175,7 +175,6 @@ class EmailProviderTest extends AbstractNotificationProviderTest {
 
 	public function testSendWithAttendeesWhenOwnerIsOrganizer(): void {
 		[$user1, $user2, $user3, , $user5] = $users = $this->getUsers();
-		$organizer = $user1;
 		$owner = $user1;
 
 		$enL10N = $this->createMock(IL10N::class);
@@ -218,13 +217,13 @@ class EmailProviderTest extends AbstractNotificationProviderTest {
 			]);
 
 		$template1 = $this->getTemplateMock();
-		$message11 = $this->getMessageMock('foo1@example.org', $template1, [$organizer->getEmailAddress()]);
-		$message12 = $this->getMessageMock('uid2@example.com', $template1, [$organizer->getEmailAddress()]);
-		$message13 = $this->getMessageMock('uid3@example.com', $template1, [$organizer->getEmailAddress()]);
+		$message11 = $this->getMessageMock('foo1@example.org', $template1);
+		$message12 = $this->getMessageMock('uid2@example.com', $template1);
+		$message13 = $this->getMessageMock('uid3@example.com', $template1);
 		$template2 = $this->getTemplateMock();
-		$message21 = $this->getMessageMock('foo3@example.org', $template2, [$organizer->getEmailAddress()]);
-		$message22 = $this->getMessageMock('foo4@example.org', $template2, [$organizer->getEmailAddress()]);
-		$message23 = $this->getMessageMock('uid1@example.com', $template2, [$organizer->getEmailAddress()]);
+		$message21 = $this->getMessageMock('foo3@example.org', $template2);
+		$message22 = $this->getMessageMock('foo4@example.org', $template2);
+		$message23 = $this->getMessageMock('uid1@example.com', $template2);
 
 		$this->mailer->expects(self::exactly(2))
 			->method('createEMailTemplate')
@@ -274,7 +273,6 @@ class EmailProviderTest extends AbstractNotificationProviderTest {
 	public function testSendWithAttendeesWhenOwnerIsAttendee(): void {
 		[$user1, $user2, $user3] = $this->getUsers();
 		$users = [$user2, $user3];
-		$organizer = $user1;
 		$owner = $user2;
 
 		$deL10N = $this->createMock(IL10N::class);
@@ -307,8 +305,8 @@ class EmailProviderTest extends AbstractNotificationProviderTest {
 			]);
 
 		$template1 = $this->getTemplateMock();
-		$message12 = $this->getMessageMock('uid2@example.com', $template1, [$organizer->getEmailAddress()]);
-		$message13 = $this->getMessageMock('uid3@example.com', $template1, [$organizer->getEmailAddress()]);
+		$message12 = $this->getMessageMock('uid2@example.com', $template1);
+		$message13 = $this->getMessageMock('uid3@example.com', $template1);
 
 		$this->mailer->expects(self::once())
 			->method('createEMailTemplate')
