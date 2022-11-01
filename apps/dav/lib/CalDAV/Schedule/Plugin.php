@@ -165,11 +165,8 @@ class Plugin extends \Sabre\CalDAV\Schedule\Plugin {
 	 * @inheritDoc
 	 */
 	public function scheduleLocalDelivery(ITip\Message $iTipMessage):void {
-		$vevent = null;
-		if (isset($iTipMessage->message, $iTipMessage->message->VEVENT)) {
-			/** @var Component $vevent */
-			$vevent = $iTipMessage->message->VEVENT;
-		}
+		/** @var Component|null $vevent */
+		$vevent = $iTipMessage->message->VEVENT ?? null;
 
 		// Strip VALARMs from incoming VEVENT
 		if ($vevent && isset($vevent->VALARM)) {

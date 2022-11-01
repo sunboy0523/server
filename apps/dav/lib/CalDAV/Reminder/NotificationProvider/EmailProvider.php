@@ -81,13 +81,9 @@ class EmailProvider extends AbstractProvider {
 						 array $users = []):void {
 		$fallbackLanguage = $this->getFallbackLanguage();
 
-		$organizer = $this->getOrganizerEMailAndNameFromEvent($vevent);
 		$organizerEmailAddress = null;
-		if ($organizer) {
-			$organizerEmailAddress = array_key_first($organizer);
-			if (!is_string($organizerEmailAddress)) {
-				$organizerEmailAddress = $organizer[0];
-			}
+		if (isset($vevent->ORGANIZER)) {
+			$organizerEmailAddress = $this->getEMailAddressOfAttendee($vevent->ORGANIZER);
 		}
 
 		$emailAddressesOfSharees = $this->getEMailAddressesOfAllUsersWithWriteAccessToCalendar($users);
@@ -105,6 +101,7 @@ class EmailProvider extends AbstractProvider {
 		);
 
 		$sortedByLanguage = $this->sortEMailAddressesByLanguage($emailAddresses, $fallbackLanguage);
+		$organizer = $this->getOrganizerEMailAndNameFromEvent($vevent);
 
 		foreach ($sortedByLanguage as $lang => $emailAddresses) {
 			if (!$this->hasL10NForLang($lang)) {
