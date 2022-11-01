@@ -46,6 +46,7 @@ use Sabre\VObject\Component;
 use Sabre\VObject\Component\VCalendar;
 use Sabre\VObject\Component\VEvent;
 use Sabre\VObject\DateTimeParser;
+use Sabre\VObject\Document;
 use Sabre\VObject\FreeBusyGenerator;
 use Sabre\VObject\ITip;
 use Sabre\VObject\Parameter;
@@ -164,6 +165,17 @@ class Plugin extends \Sabre\CalDAV\Schedule\Plugin {
 	 * @inheritDoc
 	 */
 	public function scheduleLocalDelivery(ITip\Message $iTipMessage):void {
+		$vevent = null;
+		if (isset($iTipMessage->message, $iTipMessage->message->VEVENT)) {
+			/** @var Component $vevent */
+			$vevent = $iTipMessage->message->VEVENT;
+		}
+
+		// Strip VALARMs from incoming VEVENT
+		if ($vevent && isset($vevent->VALARM)) {
+			$vevent->remove('VALARM');
+		}
+
 		parent::scheduleLocalDelivery($iTipMessage);
 
 		// We only care when the message was successfully delivered locally
@@ -200,17 +212,9 @@ class Plugin extends \Sabre\CalDAV\Schedule\Plugin {
 			return;
 		}
 
-		if (!isset($iTipMessage->message)) {
+		if (!$vevent) {
 			return;
 		}
-
-		$vcalendar = $iTipMessage->message;
-		if (!isset($vcalendar->VEVENT)) {
-			return;
-		}
-
-		/** @var Component $vevent */
-		$vevent = $vcalendar->VEVENT;
 
 		// We don't support autoresponses for recurrencing events for now
 		if (isset($vevent->RRULE) || isset($vevent->RDATE)) {

@@ -71,16 +71,30 @@ class EmailProvider extends AbstractProvider {
 	 *
 	 * @param VEvent $vevent
 	 * @param string $calendarDisplayName
+	 * @param string|null $ownerUserEmail
 	 * @param array $users
 	 * @throws \Exception
 	 */
 	public function send(VEvent $vevent,
 						 string $calendarDisplayName,
+	                     ?string $ownerUserEmail,
 						 array $users = []):void {
 		$fallbackLanguage = $this->getFallbackLanguage();
 
+		$organizer = $this->getOrganizerEMailAndNameFromEvent($vevent);
+		$organizerEmailAddress = null;
+		if ($organizer) {
+			$organizerEmailAddress = array_key_first($organizer);
+			if (!is_string($organizerEmailAddress)) {
+				$organizerEmailAddress = $organizer[0];
+			}
+		}
+
 		$emailAddressesOfSharees = $this->getEMailAddressesOfAllUsersWithWriteAccessToCalendar($users);
-		$emailAddressesOfAttendees = $this->getAllEMailAddressesFromEvent($vevent);
+		$emailAddressesOfAttendees = [];
+		if (!$ownerUserEmail || !$organizerEmailAddress || $organizerEmailAddress === $ownerUserEmail) {
+			$emailAddressesOfAttendees = $this->getAllEMailAddressesFromEvent($vevent);
+		}
 
 		// Quote from php.net:
 		// If the input arrays have the same string keys, then the later value for that key will overwrite the previous one.
@@ -91,7 +105,6 @@ class EmailProvider extends AbstractProvider {
 		);
 
 		$sortedByLanguage = $this->sortEMailAddressesByLanguage($emailAddresses, $fallbackLanguage);
-		$organizer = $this->getOrganizerEMailAndNameFromEvent($vevent);
 
 		foreach ($sortedByLanguage as $lang => $emailAddresses) {
 			if (!$this->hasL10NForLang($lang)) {
@@ -184,7 +197,7 @@ class EmailProvider extends AbstractProvider {
 		}
 
 		$organizer = $vevent->ORGANIZER;
-		if (strcasecmp($organizer->getValue(), 'mailto:') !== 0) {
+		if (strcasecmp($organizer->getValue(), 'mailto:') <= 0) {
 			return null;
 		}
 

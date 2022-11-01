@@ -11,6 +11,7 @@ declare(strict_types=1);
  * @author Joas Schilling <coding@schilljs.com>
  * @author Roeland Jago Douma <roeland@famdouma.nl>
  * @author Thomas Citharel <nextcloud@tcit.fr>
+ * @author Richard Steinmetz <richard@steinmetz.cloud>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -171,8 +172,10 @@ class ReminderService {
 			}
 
 			$user = $this->getUserFromPrincipalURI($reminder['principaluri']);
+			$userEmailAddress = null;
 			if ($user) {
 				$users[] = $user;
+				$userEmailAddress = $user->getEMailAddress();
 			}
 
 			$this->logger->debug('Reminder {id} will be sent to {numUsers} users', [
@@ -180,7 +183,7 @@ class ReminderService {
 				'numUsers' => count($users),
 			]);
 			$notificationProvider = $this->notificationProviderManager->getProvider($reminder['type']);
-			$notificationProvider->send($vevent, $reminder['displayname'], $users);
+			$notificationProvider->send($vevent, $reminder['displayname'], $userEmailAddress, $users);
 
 			$this->deleteOrProcessNext($reminder, $vevent);
 		}
