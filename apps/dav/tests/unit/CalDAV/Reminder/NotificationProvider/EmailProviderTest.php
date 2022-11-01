@@ -173,7 +173,7 @@ class EmailProviderTest extends AbstractNotificationProviderTest {
 		$this->provider->send($vcalendar->VEVENT, $this->calendarDisplayName, $user1->getEmailAddress(), $users);
 	}
 
-	public function testSendWithAttendeesForOrganizer(): void {
+	public function testSendWithAttendeesWhenOwnerIsOrganizer(): void {
 		[$user1, $user2, $user3, , $user5] = $users = $this->getUsers();
 		$organizer = $user1;
 		$owner = $user1;
@@ -271,7 +271,7 @@ class EmailProviderTest extends AbstractNotificationProviderTest {
 		$this->provider->send($vcalendar->VEVENT, $this->calendarDisplayName, $owner->getEmailAddress(), $users);
 	}
 
-	public function testSendWithAttendeesForAttendee(): void {
+	public function testSendWithAttendeesWhenOwnerIsAttendee(): void {
 		[$user1, $user2, $user3] = $this->getUsers();
 		$users = [$user2, $user3];
 		$organizer = $user1;
