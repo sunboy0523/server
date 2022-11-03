@@ -42,6 +42,7 @@ namespace OC\Group;
 use OC\Hooks\PublicEmitter;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\GroupInterface;
+use OCP\ICacheFactory;
 use OCP\IGroup;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -87,11 +88,11 @@ class Manager extends PublicEmitter implements IGroupManager {
 	public function __construct(\OC\User\Manager $userManager,
 								EventDispatcherInterface $dispatcher,
 								LoggerInterface $logger,
-								DisplayNameCache $displayNameCache) {
+								ICacheFactory $cacheFactory) {
 		$this->userManager = $userManager;
 		$this->dispatcher = $dispatcher;
 		$this->logger = $logger;
-		$this->displayNameCache = $displayNameCache;
+		$this->displayNameCache = new DisplayNameCache($cacheFactory, $this);
 
 		$cachedGroups = &$this->cachedGroups;
 		$cachedUserGroups = &$this->cachedUserGroups;
