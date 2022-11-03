@@ -43,6 +43,7 @@ use OCP\AppFramework\Middleware;
 use OCP\AppFramework\Services\InitialStateProvider;
 use OCP\Authentication\IAlternativeLogin;
 use OCP\Calendar\ICalendarProvider;
+use OCP\Calendar\IFileDownloadProvider;
 use OCP\Capabilities\ICapability;
 use OCP\Dashboard\IManager;
 use OCP\Dashboard\IWidget;
@@ -58,7 +59,6 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 class RegistrationContext {
-
 	/** @var ServiceRegistration<ICapability>[] */
 	private $capabilities = [];
 
@@ -127,6 +127,9 @@ class RegistrationContext {
 
 	/** @var ParameterRegistration[] */
 	private $sensitiveMethods = [];
+
+	/** @var IFileDownloadProvider[] */
+	private $fileDownloadProviders = [];
 
 	/** @var LoggerInterface */
 	private $logger;
@@ -326,6 +329,13 @@ class RegistrationContext {
 					$methods
 				);
 			}
+
+			public function registerFileDownloadProvider(string $class): void {
+				$this->context->registerFileDownloadProvider(
+					$this->appId,
+					$class
+				);
+			}
 		};
 	}
 
@@ -459,6 +469,10 @@ class RegistrationContext {
 	public function registerSensitiveMethods(string $appId, string $class, array $methods): void {
 		$methods = array_filter($methods, 'is_string');
 		$this->sensitiveMethods[] = new ParameterRegistration($appId, $class, $methods);
+	}
+
+	public function registerFileDownloadProvider(string $appId, string $class): void {
+		$this->fileDownloadProviders[] = new ServiceRegistration($appId, $class);
 	}
 
 	/**
@@ -756,5 +770,12 @@ class RegistrationContext {
 	 */
 	public function getSensitiveMethods(): array {
 		return $this->sensitiveMethods;
+	}
+
+	/**
+	 * @return IFileDownloadProvider[]
+	 */
+	public function getFileDownloadProviders(): array {
+		return $this->fileDownloadProviders;
 	}
 }
