@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OC\Group;
 
+use OCP\Cache\CappedMemoryCache;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\Group\Events\GroupChangedEvent;
@@ -39,12 +40,13 @@ use OCP\IGroupManager;
  * outdated.
  */
 class DisplayNameCache implements IEventListener {
-	private array $cache = [];
+	private CappedMemoryCache $cache;
 	private ICache $memCache;
 	private IGroupManager $groupManager;
 
 	public function __construct(ICacheFactory $cacheFactory, IGroupManager $groupManager) {
-		$this->memCache = $cacheFactory->createDistributed('displayNameMappingCache');
+		$this->cache = new CappedMemoryCache();
+		$this->memCache = $cacheFactory->createDistributed('groupDisplayNameMappingCache');
 		$this->groupManager = $groupManager;
 	}
 
@@ -71,7 +73,7 @@ class DisplayNameCache implements IEventListener {
 	}
 
 	public function clear(): void {
-		$this->cache = [];
+		$this->cache = new CappedMemoryCache();
 		$this->memCache->clear();
 	}
 

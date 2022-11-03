@@ -82,12 +82,16 @@ class Manager extends PublicEmitter implements IGroupManager {
 	/** @var \OC\SubAdmin */
 	private $subAdmin = null;
 
+	private DisplayNameCache $displayNameCache;
+
 	public function __construct(\OC\User\Manager $userManager,
 								EventDispatcherInterface $dispatcher,
-								LoggerInterface $logger) {
+								LoggerInterface $logger,
+								DisplayNameCache $displayNameCache) {
 		$this->userManager = $userManager;
 		$this->dispatcher = $dispatcher;
 		$this->logger = $logger;
+		$this->displayNameCache = $displayNameCache;
 
 		$cachedGroups = &$this->cachedGroups;
 		$cachedUserGroups = &$this->cachedUserGroups;
@@ -339,6 +343,14 @@ class Manager extends PublicEmitter implements IGroupManager {
 	}
 
 	/**
+	 * @param string $groupId
+	 * @return string
+	 */
+	public function getDisplayName(string $groupId): string {
+		return $this->displayNameCache->getDisplayName($groupId);
+	}
+
+	/**
 	 * get an array of groupid and displayName for a user
 	 *
 	 * @param IUser $user
@@ -346,7 +358,7 @@ class Manager extends PublicEmitter implements IGroupManager {
 	 */
 	public function getUserGroupNames(IUser $user) {
 		return array_map(function ($group) {
-			return ['displayName' => $group->getDisplayName()];
+			return ['displayName' => $this->displayNameCache->getDisplayName($group->getGID())];
 		}, $this->getUserGroups($user));
 	}
 
