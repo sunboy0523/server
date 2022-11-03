@@ -34,6 +34,10 @@ use OCA\DAV\CalDAV\Schedule\Plugin;
 use OCP\Calendar\Exceptions\CalendarException;
 use PHPUnit\Framework\MockObject\MockObject;
 use Sabre\DAV\Server;
+use Sabre\VObject\Component\VCalendar;
+use Sabre\VObject\Component\VEvent;
+use Sabre\VObject\ITip\Message;
+use Sabre\VObject\Reader;
 
 /**
  * @group DB
@@ -136,29 +140,20 @@ class CalendarImplTest extends \Test\TestCase {
 		$this->assertEquals(31, $this->calendarImpl->getPermissions());
 	}
 
-	public function testHandleImipMssage(): void {
+	public function testHandleImipMessage(): void {
 		/** @var CustomPrincipalPlugin|MockObject $authPlugin */
 		$authPlugin = $this->createMock(CustomPrincipalPlugin::class);
 		$authPlugin->expects(self::once())
 			->method('setCurrentPrincipal')
 			->with($this->calendar->getPrincipalURI());
 
-		/** @var Plugin|MockObject $schedulingPlugin */
-		$schedulingPlugin = $this->createMock(Plugin::class);
-		// FIXME: THis was expected to be called once but isn't
-		$schedulingPlugin->expects(self::once())
-			->method('setPathOfCalendarObjectChange')
-			->with('fullcalendarname');
-
 		/** @var \Sabre\DAVACL\Plugin|MockObject $schedulingPlugin */
 		$aclPlugin = $this->createMock(\Sabre\DAVACL\Plugin::class);
-		// FIXME: The :ACCEPTED looks odd in the call
 		$aclPlugin->expects(self::once())
 			->method('getPrincipalByUri')
-			->with('lewis@stardew-tent-living.com:ACCEPTED');
+			->with('mailto:lewis@stardew-tent-living.com');
 
-		$server =
-			$this->createMock(Server::class);
+		$server = $this->createMock(Server::class);
 		$server->expects($this->any())
 			->method('getPlugin')
 			->willReturnMap([
@@ -172,6 +167,9 @@ class CalendarImplTest extends \Test\TestCase {
 		$invitationResponseServer->expects($this->any())
 			->method('getServer')
 			->willReturn($server);
+		$invitationResponseServer->expects(self::once())
+			->method('isExternalAttendee')
+			->willReturn(false);
 
 		$calendarImpl = $this->getMockBuilder(CalendarImpl::class)
 			->setConstructorArgs([$this->calendar, $this->calendarInfo, $this->backend])
@@ -195,6 +193,12 @@ REQUEST-STATUS:2.0;Success
 END:VEVENT
 END:VCALENDAR
 EOF;
+		/** @var Plugin|MockObject $schedulingPlugin */
+		$schedulingPlugin = $this->createMock(Plugin::class);
+		$iTipMessage = $this->getITipMessage($message);
+		$schedulingPlugin->expects(self::once())
+			->method('scheduleLocalDelivery')
+			->with($iTipMessage);
 
 		$calendarImpl->handleIMipMessage('filename.ics', $message);
 	}
@@ -254,5 +258,24 @@ EOF;
 
 		$this->expectException(CalendarException::class);
 		$calendarImpl->handleIMipMessage('filename.ics', $message);
+	}
+
+	private function getITipMessage($calendarData): Message {
+		$iTipMessage =  new Message();
+		/** @var VCalendar $vObject */
+		$vObject = Reader::read($calendarData);
+		/** @var VEvent $vEvent */
+		$vEvent = $vObject->{'VEVENT'};
+		$orgaizer = $vEvent->{'ORGANIZER'}->getValue();
+		$attendee = $vEvent->{'ATTENDEE'}->getValue();
+
+		$iTipMessage->method = $vObject->{'METHOD'}->getValue();
+		$iTipMessage->recipient = $orgaizer;
+		$iTipMessage->sender = $attendee;
+		$iTipMessage->uid = isset($vEvent->{'UID'}) ? $vEvent->{'UID'}->getValue() : '';
+		$iTipMessage->component = 'VEVENT';
+		$iTipMessage->sequence = isset($vEvent->{'SEQUENCE'}) ? (int)$vEvent->{'SEQUENCE'}->getValue() : 0;
+		$iTipMessage->message = $vObject;
+		return $iTipMessage;
 	}
 }
