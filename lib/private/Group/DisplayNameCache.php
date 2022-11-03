@@ -34,11 +34,9 @@ use OCP\ICacheFactory;
 use OCP\IGroupManager;
 
 /**
- * Class that cache the relation UserId -> Display name
+ * Class that cache the relation Group ID -> Display name
  *
- * This saves fetching the user from a user backend and later on fetching
- * their preferences. It's generally not an issue if this data is slightly
- * outdated.
+ * This saves fetching the group from the backend for "just" the display name
  */
 class DisplayNameCache implements IEventListener {
 	private CappedMemoryCache $cache;
