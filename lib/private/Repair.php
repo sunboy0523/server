@@ -11,6 +11,7 @@ use OC\DB\Connection;
 use OC\DB\ConnectionAdapter;
 use OC\Repair\AddAppConfigLazyMigration;
 use OC\Repair\AddBruteForceCleanupJob;
+use OC\Repair\AddCleanupDeletedUsersBackgroundJob;
 use OC\Repair\AddCleanupUpdaterBackupsJob;
 use OC\Repair\AddMetadataGenerationJob;
 use OC\Repair\AddRemoveOldTasksBackgroundJob;
@@ -77,7 +78,7 @@ class Repair implements IOutput {
 
 	public function __construct(
 		private IEventDispatcher $dispatcher,
-		private LoggerInterface $logger
+		private LoggerInterface $logger,
 	) {
 	}
 
@@ -192,6 +193,7 @@ class Repair implements IOutput {
 			\OCP\Server::get(AddAppConfigLazyMigration::class),
 			\OCP\Server::get(RepairLogoDimension::class),
 			\OCP\Server::get(RemoveLegacyDatadirFile::class),
+			\OCP\Server::get(AddCleanupDeletedUsersBackgroundJob::class),
 		];
 	}
 

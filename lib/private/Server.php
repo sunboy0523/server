@@ -177,7 +177,6 @@ use OCP\IEventSourceFactory;
 use OCP\IGroupManager;
 use OCP\IInitialStateService;
 use OCP\IL10N;
-use OCP\ILogger;
 use OCP\INavigationManager;
 use OCP\IPhoneNumberUtil;
 use OCP\IPreview;
@@ -217,6 +216,7 @@ use OCP\Security\ISecureRandom;
 use OCP\Security\ITrustedDomainHelper;
 use OCP\Security\RateLimiting\ILimiter;
 use OCP\Security\VerificationToken\IVerificationToken;
+use OCP\ServerVersion;
 use OCP\Settings\IDeclarativeManager;
 use OCP\SetupCheck\ISetupCheckManager;
 use OCP\Share\IProviderFactory;
@@ -594,10 +594,12 @@ class Server extends ServerContainer implements IServerContainer {
 			);
 			/** @var SystemConfig $config */
 			$config = $c->get(SystemConfig::class);
+			/** @var ServerVersion $serverVersion */
+			$serverVersion = $c->get(ServerVersion::class);
 
 			if ($config->getValue('installed', false) && !(defined('PHPUNIT_RUN') && PHPUNIT_RUN)) {
 				$logQuery = $config->getValue('log_query');
-				$prefixClosure = function () use ($logQuery) {
+				$prefixClosure = function () use ($logQuery, $serverVersion) {
 					if (!$logQuery) {
 						try {
 							$v = \OC_App::getAppVersions();
@@ -614,7 +616,7 @@ class Server extends ServerContainer implements IServerContainer {
 							'log_query' => 'enabled',
 						];
 					}
-					$v['core'] = implode(',', \OC_Util::getVersion());
+					$v['core'] = implode(',', $serverVersion->getVersion());
 					$version = implode(',', $v);
 					$instanceId = \OC_Util::getInstanceId();
 					$path = \OC::$SERVERROOT;
@@ -680,6 +682,7 @@ class Server extends ServerContainer implements IServerContainer {
 		$this->registerAlias(\OCP\Support\Subscription\IRegistry::class, \OC\Support\Subscription\Registry::class);
 		$this->registerAlias(\OCP\Support\Subscription\IAssertion::class, \OC\Support\Subscription\Assertion::class);
 
+		/** Only used by the PsrLoggerAdapter should not be used by apps */
 		$this->registerService(\OC\Log::class, function (Server $c) {
 			$logType = $c->get(AllConfig::class)->getSystemValue('log_type', 'file');
 			$factory = new LogFactory($c, $this->get(SystemConfig::class));
@@ -688,7 +691,6 @@ class Server extends ServerContainer implements IServerContainer {
 
 			return new Log($logger, $this->get(SystemConfig::class), crashReporters: $registry);
 		});
-		$this->registerAlias(ILogger::class, \OC\Log::class);
 		// PSR-3 logger
 		$this->registerAlias(LoggerInterface::class, PsrLoggerAdapter::class);
 
@@ -866,7 +868,8 @@ class Server extends ServerContainer implements IServerContainer {
 			$appManager = $c->get(IAppManager::class);
 
 			return new Checker(
-				new EnvironmentHelper(),
+				$c->get(ServerVersion::class),
+				$c->get(EnvironmentHelper::class),
 				new FileAccessHelper(),
 				new AppLocator(),
 				$config,
@@ -1038,6 +1041,7 @@ class Server extends ServerContainer implements IServerContainer {
 				$backgroundService = new BackgroundService(
 					$c->get(IRootFolder::class),
 					$c->getAppDataDir('theming'),
+					$c->get(IAppConfig::class),
 					$c->get(\OCP\IConfig::class),
 					$c->get(ISession::class)->get('user_id'),
 				);
@@ -1057,7 +1061,7 @@ class Server extends ServerContainer implements IServerContainer {
 					$c->get(IUserSession::class),
 					$c->get(IURLGenerator::class),
 					$c->get(ICacheFactory::class),
-					new Util($c->get(\OCP\IConfig::class), $this->get(IAppManager::class), $c->getAppDataDir('theming'), $imageManager),
+					new Util($c->get(ServerVersion::class), $c->get(\OCP\IConfig::class), $this->get(IAppManager::class), $c->getAppDataDir('theming'), $imageManager),
 					$imageManager,
 					$c->get(IAppManager::class),
 					$c->get(INavigationManager::class),
@@ -1654,16 +1658,6 @@ class Server extends ServerContainer implements IServerContainer {
 	 */
 	public function getJobList() {
 		return $this->get(IJobList::class);
-	}
-
-	/**
-	 * Returns a logger instance
-	 *
-	 * @return ILogger
-	 * @deprecated 20.0.0
-	 */
-	public function getLogger() {
-		return $this->get(ILogger::class);
 	}
 
 	/**
